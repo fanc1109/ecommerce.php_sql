@@ -19,7 +19,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($email) || empty($senha)) {
         $login_erro = "Por favor, preencha o e-mail e a senha.";
     } else {
-        $sql = "SELECT id, nome, email, senha FROM administradores WHERE email = ?";
+        // Tabela 'Usuario' e colunas ajustadas para a sua base de dados
+        $sql = "SELECT id_usuario, nome_usuario, email_usuario, senha_usuario FROM Usuario WHERE email_usuario = ?";
         
         if ($stmt = mysqli_prepare($link, $sql)) {
             mysqli_stmt_bind_param($stmt, "s", $param_email);
@@ -28,17 +29,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (mysqli_stmt_execute($stmt)) {
                 mysqli_stmt_store_result($stmt);
                 
-                // Utilização correta da função para Prepared Statements
                 if (mysqli_stmt_num_rows($stmt) == 1) {
-                    mysqli_stmt_bind_result($stmt, $id, $nome, $email, $hashed_senha);
+                    // Inicializa as variáveis para não gerar aviso no VS Code
+                    $id = $nome = $email_db = $hashed_senha = "";
+
+                    mysqli_stmt_bind_result($stmt, $id, $nome, $email_db, $hashed_senha);
+
                     if (mysqli_stmt_fetch($stmt)) {
-                        if (password_verify($senha, $hashed_senha)) {
+                        // Valida tanto em texto simples como via hash encriptado
+                        if ($senha === $hashed_senha || password_verify($senha, $hashed_senha)) {
                             // Senha correta: Inicia nova sessão
                             session_regenerate_id();
                             $_SESSION["loggedin"] = true;
                             $_SESSION["admin_id"] = $id;
                             $_SESSION["admin_nome"] = $nome;
-                            $_SESSION["admin_email"] = $email;
+                            $_SESSION["admin_email"] = $email_db;
                             
                             header("location: index.php");
                             exit();
@@ -114,6 +119,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <i class="fa fa-arrow-right text-xs"></i>
                 </button>
             </form>
+
+            <div class="mt-6 text-center text-sm text-slate-500">
+                Não tem conta? <a href="create_usuario.php" class="text-blue-600 hover:underline font-medium">Cadastre-se</a>
+            </div>
         </div>
     </div>
 </body>
